@@ -1,0 +1,340 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: 'Kalimati';
+  src: url('./assets/fonts/Kalimati.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@layer base {
+  :root {
+    --background: 220 20% 97%;
+    --foreground: 220 30% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 220 30% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 30% 10%;
+    --primary: 215 80% 45%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 145 55% 42%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 220 15% 92%;
+    --muted-foreground: 220 10% 45%;
+    --accent: 28 85% 55%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 15% 88%;
+    --input: 220 15% 88%;
+    --ring: 215 80% 45%;
+    --radius: 0.875rem;
+    --success: 145 55% 42%;
+    --warning: 38 92% 50%;
+    --info: 215 80% 55%;
+
+    /* Glass tokens */
+    --glass-bg: 0 0% 100% / 0.6;
+    --glass-border: 0 0% 100% / 0.3;
+    --glass-blur: 16px;
+    --glass-shadow: 0 8px 32px hsl(220 30% 10% / 0.08);
+    --glass-shadow-elevated: 0 16px 48px hsl(220 30% 10% / 0.12);
+    --glass-highlight: 0 0% 100% / 0.5;
+    --glow-primary: 215 80% 45% / 0.15;
+    --glow-accent: 28 85% 55% / 0.12;
+    --mesh-gradient: radial-gradient(ellipse at 20% 0%, hsl(215 80% 90% / 0.5) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 100%, hsl(145 55% 88% / 0.3) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 50%, hsl(28 85% 92% / 0.2) 0%, transparent 60%);
+
+    /* Hierarchy colors */
+    --municipality: 215 80% 45%;
+    --municipality-light: 215 80% 95%;
+    --ward: 145 55% 42%;
+    --ward-light: 145 55% 92%;
+    --booth: 28 85% 55%;
+    --booth-light: 28 85% 92%;
+
+    /* Sidebar */
+    --sidebar-background: 220 25% 14%;
+    --sidebar-foreground: 220 10% 85%;
+    --sidebar-primary: 215 80% 55%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 20% 20%;
+    --sidebar-accent-foreground: 220 10% 90%;
+    --sidebar-border: 220 20% 22%;
+    --sidebar-ring: 215 80% 55%;
+
+    /* Chart colors */
+    --chart-1: 215 80% 45%;
+    --chart-2: 145 55% 42%;
+    --chart-3: 28 85% 55%;
+    --chart-4: 280 60% 55%;
+    --chart-5: 350 65% 55%;
+
+    /* Font families */
+    --font-nepali: 'Kalimati', 'Noto Sans Devanagari', sans-serif;
+    --font-english: 'Inter', system-ui, sans-serif;
+  }
+
+  .dark {
+    --background: 225 25% 6%;
+    --foreground: 220 10% 92%;
+    --card: 225 25% 10%;
+    --card-foreground: 220 10% 92%;
+    --popover: 225 25% 10%;
+    --popover-foreground: 220 10% 92%;
+    --primary: 215 80% 55%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 145 55% 48%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 225 20% 16%;
+    --muted-foreground: 220 10% 60%;
+    --accent: 28 85% 55%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 225 20% 18%;
+    --input: 225 20% 18%;
+    --ring: 215 80% 55%;
+    --success: 145 55% 48%;
+    --warning: 38 92% 55%;
+    --info: 215 80% 60%;
+
+    --glass-bg: 225 25% 12% / 0.7;
+    --glass-border: 225 20% 25% / 0.4;
+    --glass-blur: 18px;
+    --glass-shadow: 0 8px 32px hsl(0 0% 0% / 0.3);
+    --glass-shadow-elevated: 0 16px 48px hsl(0 0% 0% / 0.4);
+    --glass-highlight: 225 20% 30% / 0.2;
+    --glow-primary: 215 80% 55% / 0.2;
+    --glow-accent: 28 85% 55% / 0.15;
+    --mesh-gradient: radial-gradient(ellipse at 20% 0%, hsl(215 80% 30% / 0.3) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 100%, hsl(280 60% 25% / 0.2) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 50%, hsl(225 25% 8% / 0.5) 0%, transparent 60%);
+
+    --sidebar-background: 225 30% 4%;
+    --sidebar-foreground: 220 10% 85%;
+    --sidebar-primary: 215 80% 55%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 225 25% 10%;
+    --sidebar-accent-foreground: 220 10% 90%;
+    --sidebar-border: 225 25% 12%;
+    --sidebar-ring: 215 80% 55%;
+  }
+
+  .aurora {
+    --background: 240 20% 8%;
+    --foreground: 200 20% 92%;
+    --card: 240 20% 12%;
+    --card-foreground: 200 20% 92%;
+    --popover: 240 20% 12%;
+    --popover-foreground: 200 20% 92%;
+    --primary: 174 72% 50%;
+    --primary-foreground: 240 20% 8%;
+    --secondary: 280 60% 60%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 240 15% 18%;
+    --muted-foreground: 200 10% 55%;
+    --accent: 174 72% 45%;
+    --accent-foreground: 240 20% 8%;
+    --destructive: 0 62.8% 40%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 240 15% 20%;
+    --input: 240 15% 20%;
+    --ring: 174 72% 50%;
+    --success: 160 60% 50%;
+    --warning: 38 92% 55%;
+    --info: 200 70% 60%;
+
+    --glass-bg: 240 20% 14% / 0.65;
+    --glass-border: 174 40% 40% / 0.2;
+    --glass-blur: 18px;
+    --glass-shadow: 0 8px 32px hsl(240 30% 5% / 0.4);
+    --glass-shadow-elevated: 0 16px 48px hsl(240 30% 5% / 0.5);
+    --glass-highlight: 174 50% 50% / 0.1;
+    --glow-primary: 174 72% 50% / 0.2;
+    --glow-accent: 280 60% 60% / 0.15;
+    --mesh-gradient: radial-gradient(ellipse at 15% 10%, hsl(174 72% 40% / 0.25) 0%, transparent 45%),
+      radial-gradient(ellipse at 85% 80%, hsl(280 60% 40% / 0.2) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 40%, hsl(240 20% 10% / 0.6) 0%, transparent 60%);
+
+    --sidebar-background: 240 25% 6%;
+    --sidebar-foreground: 200 15% 80%;
+    --sidebar-primary: 174 72% 50%;
+    --sidebar-primary-foreground: 240 20% 8%;
+    --sidebar-accent: 240 20% 14%;
+    --sidebar-accent-foreground: 200 15% 85%;
+    --sidebar-border: 240 20% 15%;
+    --sidebar-ring: 174 72% 50%;
+
+    --chart-1: 174 72% 50%;
+    --chart-2: 280 60% 60%;
+    --chart-3: 200 70% 55%;
+    --chart-4: 320 60% 55%;
+    --chart-5: 45 80% 55%;
+
+    --municipality: 174 72% 50%;
+    --municipality-light: 174 50% 20%;
+    --ward: 280 60% 55%;
+    --ward-light: 280 40% 20%;
+    --booth: 200 70% 55%;
+    --booth-light: 200 50% 20%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-nepali);
+  }
+}
+
+@layer utilities {
+  .font-nepali {
+    font-family: var(--font-nepali);
+  }
+
+  .font-english {
+    font-family: var(--font-english);
+  }
+}
+
+/* Mesh background */
+.mesh-bg {
+  background-image: var(--mesh-gradient);
+  background-attachment: fixed;
+}
+
+/* Noise texture */
+.noise-overlay::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.03;
+  pointer-events: none;
+  z-index: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 256px;
+}
+
+/* Glass panel */
+.glass-panel {
+  background: hsl(var(--glass-bg));
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid hsl(var(--glass-border));
+  box-shadow: var(--glass-shadow);
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, hsl(var(--glass-highlight)) 50%, transparent 100%);
+  pointer-events: none;
+}
+
+.glass-panel-elevated {
+  background: hsl(var(--glass-bg));
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid hsl(var(--glass-border));
+  box-shadow: var(--glass-shadow-elevated);
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-panel-elevated::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, hsl(var(--glass-highlight)) 50%, transparent 100%);
+  pointer-events: none;
+}
+
+/* Glow effects */
+.glow-primary {
+  box-shadow: 0 0 30px hsl(var(--glow-primary)), var(--glass-shadow);
+}
+
+.glow-accent {
+  box-shadow: 0 0 20px hsl(var(--glow-accent)), var(--glass-shadow);
+}
+
+/* Reduce motion */
+.reduce-motion *,
+.reduce-motion *::before,
+.reduce-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+
+/* Animations */
+@keyframes fade-in {
+  0% { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-in-left {
+  0% { opacity: 0; transform: translateX(-20px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes scale-up {
+  0% { opacity: 0; transform: scale(0.95); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes count-up {
+  0% { opacity: 0; transform: translateY(20px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.2);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.35);
+}
