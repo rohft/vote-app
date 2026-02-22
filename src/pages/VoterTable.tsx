@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Building2, MapPin, Vote, Search, Download, Upload, ChevronDown,
   Edit, Trash2, X, ChevronLeft, ChevronRight, Printer, Eye, EyeOff,
-  Filter, Columns, Users, Plus, AlignLeft, AlignCenter, AlignRight, Globe
+  Filter, Columns, Users, Plus, AlignLeft, AlignCenter, AlignRight, Globe, Sparkles
 } from 'lucide-react';
 import { readExcelFile, writeExcelFile } from '@/lib/excel';
 import { matchExcelHeaders, parseVoterRow } from '@/lib/excelHeaderMatch';
@@ -214,7 +214,58 @@ const VoterTable: React.FC = () => {
     });
   };
 
-  // Get constrained ethnicity/caste based on surname mapping
+  const handleSuggestFamily = () => {
+    if (!editingVoter || !selectedMunId || !selectedWardId) return;
+
+    // 1. Gather context
+    const currentSurname = editingVoter.surname?.trim().toLowerCase();
+    const currentLocality = editingVoter.locality?.trim().toLowerCase();
+    
+    if (!currentSurname) {
+      alert(language === 'ne' ? 'कृपया पहिले थर प्रविष्ट गर्नुहोस्' : 'Please enter a surname first');
+      return;
+    }
+
+    // 2. Find potential family members in the same ward/booth
+    // We can search across the whole ward for better results
+    const allWardVoters = selectedMun?.wards.find(w => w.id === selectedWardId)?.booths.flatMap(b => b.voters) || [];
+    
+    const matches = allWardVoters.filter(v => {
+      if (v.id === editingVoter.id) return false; // Skip self
+      if (!v.family) return false; // Skip those without family ID
+
+      const matchSurname = v.surname?.toLowerCase() === currentSurname;
+      const matchLocality = currentLocality ? v.locality?.toLowerCase() === currentLocality : true;
+
+      // Logic: Strong match if Surname AND Locality match
+      return matchSurname && matchLocality;
+    });
+
+    // 3. Extract unique family IDs
+    const distinctFamilies = Array.from(new Set(matches.map(v => v.family)));
+
+    if (distinctFamilies.length === 1) {
+      // Perfect match found
+      setEditingVoter({ ...editingVoter, family: distinctFamilies[0] });
+    } else if (distinctFamilies.length > 1) {
+      // Multiple options found - for now, pick the first one or we could show a mini-dialog
+      // Let's cycle through them or just pick the most frequent? 
+      // Simple approach: Pick the first one and let user change if needed
+       setEditingVoter({ ...editingVoter, family: distinctFamilies[0] });
+       alert(language === 'ne' 
+         ? `धेरै परिवारहरू भेटिए: ${distinctFamilies.join(', ')}. पहिलो छनौट गरियो।` 
+         : `Multiple families found: ${distinctFamilies.join(', ')}. Selected the first one.`);
+    } else {
+      // No match found - Suggest a new Family ID
+      // Format: FAM-{Surname}-{LocalityCode}-{Random4}
+      const locCode = currentLocality ? currentLocality.substring(0, 3).toUpperCase() : 'GEN';
+      const surCode = editingVoter.surname.substring(0, 3).toUpperCase();
+      const random = Math.floor(1000 + Math.random() * 9000);
+      const newId = `${surCode}-${locCode}-${random}`;
+      setEditingVoter({ ...editingVoter, family: newId });
+    }
+  };
+
   const getSurnameConstraint = (surname: string) => {
     for (const eth of ethnicityMappings) {
       for (const c of eth.castes) {
@@ -813,7 +864,24 @@ const VoterTable: React.FC = () => {
                           className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-background focus:ring-2 focus:ring-primary/30 focus:outline-none"
                         />
                       );
-                    })() : col.type === 'single-choice' && col.choices ? (
+                    })() : col.key === 'family' ? (
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={String(editingVoter[col.key] || '')}
+                          onChange={e => setEditingVoter({ ...editingVoter, family: e.target.value })}
+                          className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-background focus:ring-2 focus:ring-primary/30 focus:outline-none"
+                          placeholder={language === 'ne' ? 'परिवार ID' : 'Family ID'}
+                        />
+                        <button
+                          onClick={handleSuggestFamily}
+                          className="p-2 bg-accent/20 text-accent-foreground rounded-lg hover:bg-accent/30 transition-colors"
+                          title={language === 'ne' ? 'AI सुझाव' : 'AI Suggest'}
+                        >
+                          <Sparkles className="w-4 h-4 text-orange-500" />
+                        </button>
+                      </div>
+                    ) : col.type === 'single-choice' && col.choices ? (
                       <select
                         value={String(editingVoter[col.key] || '')}
                         onChange={e => setEditingVoter({ ...editingVoter, [col.key]: e.target.value })}
