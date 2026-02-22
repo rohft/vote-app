@@ -256,26 +256,62 @@ const VoterTable: React.FC = () => {
       return isSpouse || isParentChild || isSibling;
     });
 
-    // 3. Extract unique family IDs
-    const distinctFamilies = Array.from(new Set(matches.map(v => v.family)));
+    // 3. Extract potential matches with relationships
+    const familyOptions = matches.map(v => {
+      let relation = 'Relative';
+      const vName = v.name?.toLowerCase();
+      const vSpouse = v.spouseName?.toLowerCase();
+      const vParents = v.parentsName?.toLowerCase();
 
-    if (distinctFamilies.length === 1) {
-      // Perfect match found
-      setEditingVoter({ ...editingVoter, family: distinctFamilies[0] });
-    } else if (distinctFamilies.length > 1) {
-       // Multiple options found - pick the first one
-       setEditingVoter({ ...editingVoter, family: distinctFamilies[0] });
-       alert(language === 'ne' 
-         ? `धेरै परिवारहरू भेटिए: ${distinctFamilies.join(', ')}. पहिलो छनौट गरियो।` 
-         : `Multiple families found: ${distinctFamilies.join(', ')}. Selected the first one.`);
+      if ((currentSpouse && currentSpouse.includes(vName)) || (vSpouse && vSpouse.includes(currentName))) {
+        relation = language === 'ne' ? 'जीवनसाथी' : 'Spouse';
+      } else if (currentParents && currentParents.includes(vName)) {
+        relation = language === 'ne' ? 'आमा/बुबा' : 'Parent';
+      } else if (vParents && vParents.includes(currentName)) {
+        relation = language === 'ne' ? 'छोरा/छोरी' : 'Child';
+      } else if (currentParents && vParents && currentParents === vParents) {
+        relation = language === 'ne' ? 'दाजु/भाई/दिदी/बहिनी' : 'Sibling';
+      }
+      
+      return { id: v.family, name: v.name, relation };
+    });
+
+    // Remove duplicates based on Family ID
+    const distinctOptions = Array.from(new Map(familyOptions.map(item => [item.id, item])).values());
+
+    if (distinctOptions.length === 0) {
+       // No match found - Suggest a new Family ID
+       const surCode = editingVoter.surname.substring(0, 3).toUpperCase();
+       const nameCode = editingVoter.name.substring(0, 3).toUpperCase();
+       const random = Math.floor(1000 + Math.random() * 9000);
+       const newId = `${surCode}-${nameCode}-${random}`;
+       
+       if (confirm(language === 'ne' 
+           ? 'कुनै सम्बन्धित परिवार भेटिएन। नयाँ परिवार ID सिर्जना गर्ने?' 
+           : 'No related family found. Create a new Family ID?')) {
+         setEditingVoter({ ...editingVoter, family: newId });
+       }
+    } else if (distinctOptions.length === 1) {
+      // One match found
+      const match = distinctOptions[0];
+      if (confirm(language === 'ne' 
+          ? `सुझाव: ${match.name} (${match.relation}) को परिवारमा जोड्ने?` 
+          : `Suggestion: Join family of ${match.name} (${match.relation})?`)) {
+        setEditingVoter({ ...editingVoter, family: match.id });
+      }
     } else {
-      // No match found - Suggest a new Family ID
-      // Format: FAM-{Surname}-{First3LettersOfName}-{Random4}
-      const surCode = editingVoter.surname.substring(0, 3).toUpperCase();
-      const nameCode = editingVoter.name.substring(0, 3).toUpperCase();
-      const random = Math.floor(1000 + Math.random() * 9000);
-      const newId = `${surCode}-${nameCode}-${random}`;
-      setEditingVoter({ ...editingVoter, family: newId });
+      // Multiple matches found
+      const message = language === 'ne' 
+        ? 'धेरै परिवारहरू भेटिए:\n' + distinctOptions.map((o, i) => `${i+1}. ${o.name} (${o.relation})`).join('\n') + '\n\nकुन छान्ने? (1, 2, ...)'
+        : 'Multiple families found:\n' + distinctOptions.map((o, i) => `${i+1}. ${o.name} (${o.relation})`).join('\n') + '\n\nWhich one? (1, 2, ...)';
+      
+      const choice = prompt(message);
+      if (choice) {
+        const index = parseInt(choice) - 1;
+        if (index >= 0 && index < distinctOptions.length) {
+          setEditingVoter({ ...editingVoter, family: distinctOptions[index].id });
+        }
+      }
     }
   };
 
