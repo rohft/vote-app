@@ -217,9 +217,11 @@ const VoterTable: React.FC = () => {
   const handleSuggestFamily = () => {
     if (!editingVoter || !selectedMunId || !selectedWardId) return;
 
-    // 1. Gather context
+    // 1. Gather context from current voter
     const currentSurname = editingVoter.surname?.trim().toLowerCase();
-    const currentLocality = editingVoter.locality?.trim().toLowerCase();
+    const currentName = editingVoter.name?.trim().toLowerCase();
+    const currentSpouse = editingVoter.spouseName?.trim().toLowerCase();
+    const currentParents = editingVoter.parentsName?.trim().toLowerCase();
     
     if (!currentSurname) {
       alert(language === 'ne' ? 'कृपया पहिले थर प्रविष्ट गर्नुहोस्' : 'Please enter a surname first');
@@ -227,18 +229,31 @@ const VoterTable: React.FC = () => {
     }
 
     // 2. Find potential family members in the same ward/booth
-    // We can search across the whole ward for better results
     const allWardVoters = selectedMun?.wards.find(w => w.id === selectedWardId)?.booths.flatMap(b => b.voters) || [];
     
     const matches = allWardVoters.filter(v => {
       if (v.id === editingVoter.id) return false; // Skip self
       if (!v.family) return false; // Skip those without family ID
 
-      const matchSurname = v.surname?.toLowerCase() === currentSurname;
-      const matchLocality = currentLocality ? v.locality?.toLowerCase() === currentLocality : true;
+      const vSurname = v.surname?.toLowerCase();
+      const vName = v.name?.toLowerCase();
+      const vSpouse = v.spouseName?.toLowerCase();
+      const vParents = v.parentsName?.toLowerCase();
 
-      // Logic: Strong match if Surname AND Locality match
-      return matchSurname && matchLocality;
+      // Rule 1: Same Surname is mandatory
+      if (vSurname !== currentSurname) return false;
+
+      // Rule 2: Check relationships
+      // A. Spouse Match: My spouse is them OR Their spouse is me
+      const isSpouse = (currentSpouse && currentSpouse.includes(vName)) || (vSpouse && vSpouse.includes(currentName));
+      
+      // B. Parent/Child Match: My parent is them OR Their parent is me
+      const isParentChild = (currentParents && currentParents.includes(vName)) || (vParents && vParents.includes(currentName));
+      
+      // C. Sibling Match: We have the same parents
+      const isSibling = currentParents && vParents && currentParents === vParents;
+
+      return isSpouse || isParentChild || isSibling;
     });
 
     // 3. Extract unique family IDs
@@ -248,20 +263,18 @@ const VoterTable: React.FC = () => {
       // Perfect match found
       setEditingVoter({ ...editingVoter, family: distinctFamilies[0] });
     } else if (distinctFamilies.length > 1) {
-      // Multiple options found - for now, pick the first one or we could show a mini-dialog
-      // Let's cycle through them or just pick the most frequent? 
-      // Simple approach: Pick the first one and let user change if needed
+       // Multiple options found - pick the first one
        setEditingVoter({ ...editingVoter, family: distinctFamilies[0] });
        alert(language === 'ne' 
          ? `धेरै परिवारहरू भेटिए: ${distinctFamilies.join(', ')}. पहिलो छनौट गरियो।` 
          : `Multiple families found: ${distinctFamilies.join(', ')}. Selected the first one.`);
     } else {
       // No match found - Suggest a new Family ID
-      // Format: FAM-{Surname}-{LocalityCode}-{Random4}
-      const locCode = currentLocality ? currentLocality.substring(0, 3).toUpperCase() : 'GEN';
+      // Format: FAM-{Surname}-{First3LettersOfName}-{Random4}
       const surCode = editingVoter.surname.substring(0, 3).toUpperCase();
+      const nameCode = editingVoter.name.substring(0, 3).toUpperCase();
       const random = Math.floor(1000 + Math.random() * 9000);
-      const newId = `${surCode}-${locCode}-${random}`;
+      const newId = `${surCode}-${nameCode}-${random}`;
       setEditingVoter({ ...editingVoter, family: newId });
     }
   };
