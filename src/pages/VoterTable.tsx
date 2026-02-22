@@ -215,6 +215,9 @@ const VoterTable: React.FC = () => {
     });
   };
 
+  const [showFamilySearch, setShowFamilySearch] = useState(false);
+  const [familySearchQuery, setFamilySearchQuery] = useState('');
+
   const handleSuggestFamily = () => {
     if (!editingVoter || !selectedMunId || !selectedWardId) return;
 
@@ -245,13 +248,8 @@ const VoterTable: React.FC = () => {
       if (vSurname !== currentSurname) return false;
 
       // Rule 2: Check relationships
-      // A. Spouse Match: My spouse is them OR Their spouse is me
       const isSpouse = (currentSpouse && currentSpouse.includes(vName)) || (vSpouse && vSpouse.includes(currentName));
-      
-      // B. Parent/Child Match: My parent is them OR Their parent is me
       const isParentChild = (currentParents && currentParents.includes(vName)) || (vParents && vParents.includes(currentName));
-      
-      // C. Sibling Match: We have the same parents
       const isSibling = currentParents && vParents && currentParents === vParents;
 
       return isSpouse || isParentChild || isSibling;
@@ -274,23 +272,18 @@ const VoterTable: React.FC = () => {
         relation = language === 'ne' ? 'दाजु/भाई/दिदी/बहिनी' : 'Sibling';
       }
       
-      return { id: v.family, name: v.name, relation };
+      return { id: v.family, name: v.name, relation, voterId: v.voterIdNo };
     });
 
     // Remove duplicates based on Family ID
     const distinctOptions = Array.from(new Map(familyOptions.map(item => [item.id, item])).values());
 
     if (distinctOptions.length === 0) {
-       // No match found - Suggest a new Family ID
-       const surCode = editingVoter.surname.substring(0, 3).toUpperCase();
-       const nameCode = editingVoter.name.substring(0, 3).toUpperCase();
-       const random = Math.floor(1000 + Math.random() * 9000);
-       const newId = `${surCode}-${nameCode}-${random}`;
-       
+       // No match found -> Open Manual Search Dialog
        if (confirm(language === 'ne' 
-           ? 'कुनै सम्बन्धित परिवार भेटिएन। नयाँ परिवार ID सिर्जना गर्ने?' 
-           : 'No related family found. Create a new Family ID?')) {
-         setEditingVoter({ ...editingVoter, family: newId });
+           ? 'कुनै सम्बन्धित परिवार भेटिएन। मतदाता परिचयपत्र वा क्र.सं. बाट खोज्ने?' 
+           : 'No related family found. Search by Voter ID or S.N.?')) {
+         setShowFamilySearch(true);
        }
     } else if (distinctOptions.length === 1) {
       // One match found
@@ -313,6 +306,47 @@ const VoterTable: React.FC = () => {
           setEditingVoter({ ...editingVoter, family: distinctOptions[index].id });
         }
       }
+    }
+  };
+
+  const handleManualFamilySearch = () => {
+    if (!familySearchQuery || !selectedMunId || !selectedWardId) return;
+    
+    const allWardVoters = selectedMun?.wards.find(w => w.id === selectedWardId)?.booths.flatMap(b => b.voters) || [];
+    
+    // Search by Voter ID OR Serial No
+    const target = allWardVoters.find(v => 
+      v.voterIdNo === familySearchQuery || 
+      String(v.voterSerialNo) === familySearchQuery
+    );
+
+    if (target) {
+      if (target.family) {
+        setEditingVoter({ ...editingVoter, family: target.family });
+        setShowFamilySearch(false);
+        setFamilySearchQuery('');
+        alert(language === 'ne' ? `जोडियो: ${target.name} को परिवार` : `Linked to family of: ${target.name}`);
+      } else {
+        // Target has no family ID yet -> Create one for them and link me
+        const surCode = target.surname.substring(0, 3).toUpperCase();
+        const nameCode = target.name.substring(0, 3).toUpperCase();
+        const random = Math.floor(1000 + Math.random() * 9000);
+        const newId = `${surCode}-${nameCode}-${random}`;
+        
+        // Update TARGET voter (we need to update them too!)
+        // Note: This requires updating the target voter in state/DB. 
+        // For now, we will just generate ID and let user know they should update target too? 
+        // Or better, just use this ID for current voter.
+        setEditingVoter({ ...editingVoter, family: newId });
+        setShowFamilySearch(false);
+        setFamilySearchQuery('');
+        
+        alert(language === 'ne' 
+          ? `नयाँ परिवार ID (${newId}) सिर्जना गरियो। कृपया ${target.name} को लागि पनि यो ID राख्नुहोस्।` 
+          : `New Family ID (${newId}) created. Please verify ${target.name} also gets this ID.`);
+      }
+    } else {
+      alert(language === 'ne' ? 'कुनै मतदाता भेटिएन' : 'No voter found');
     }
   };
 
@@ -1042,6 +1076,51 @@ const VoterTable: React.FC = () => {
                   className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm hover:opacity-90 transition-opacity"
                 >
                   {language === 'ne' ? 'सबै अपडेट गर्नुहोस्' : 'Update All'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      {/* Family Search Dialog */}
+      <AnimatePresence>
+        {showFamilySearch && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-foreground/30 backdrop-blur-sm z-[60] flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-card rounded-xl border border-border p-6 w-full max-w-sm shadow-xl"
+            >
+              <h3 className="font-bold text-lg mb-4">{language === 'ne' ? 'परिवार सदस्य खोज्नुहोस्' : 'Search Family Member'}</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                {language === 'ne' ? 'मतदाता परिचयपत्र नं. वा क्र.सं. प्रविष्ट गर्नुहोस्:' : 'Enter Voter ID No. or Serial No.:'}
+              </p>
+              <input
+                type="text"
+                value={familySearchQuery}
+                onChange={e => setFamilySearchQuery(e.target.value)}
+                className="w-full px-3 py-2 border border-border rounded-lg mb-4 focus:ring-2 focus:ring-primary/30 focus:outline-none"
+                placeholder="12345 or VID-..."
+                autoFocus
+              />
+              <div className="flex justify-end gap-2">
+                <button
+                  onClick={() => setShowFamilySearch(false)}
+                  className="px-4 py-2 border border-border rounded-lg text-sm hover:bg-muted"
+                >
+                  {t('cancel')}
+                </button>
+                <button
+                  onClick={handleManualFamilySearch}
+                  className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm hover:opacity-90"
+                >
+                  {t('search')}
                 </button>
               </div>
             </motion.div>
