@@ -4,9 +4,9 @@
 // Database configuration
 // Change these values to match your Hostinger database details
 $host = 'localhost';
-$dbname = 'u123456789_votersetu'; // Example database name
-$username = 'u123456789_user';    // Example username
-$password = 'YourStrongPassword123!'; // Example password
+$dbname = 'u620305964_voteapp'; // Example database name
+$username = 'u620305964_rohft';    // Example username
+$password = '!8Q5nZcXE##dgc?'; // Example password
 
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
