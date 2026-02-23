@@ -6,7 +6,7 @@ import {
   Building2, MapPin, Vote, Users, Plus, Trash2, Edit2, X, Save,
   PieChart, BarChart3, Filter, Calendar, Heart, UserCheck, Type,
   Lightbulb, Target, TrendingUp, AlertTriangle, CheckCircle, Megaphone,
-  Check, ChevronDown, Search
+  Check, ChevronDown, Search, LayoutGrid, List, ArrowDownAZ, ArrowUpNarrowWide
 } from 'lucide-react';
 import { PieChart as RPieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -80,6 +80,8 @@ const Segments: React.FC = () => {
   const [editingCategory, setEditingCategory] = useState<string | null>(null);
   const [categoryEdit, setCategoryEdit] = useState({ caste: '', ethnicity: '' });
   const [surnameSearch, setSurnameSearch] = useState('');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [sortMode, setSortMode] = useState<'count' | 'alpha'>('count');
   const [pendingChanges, setPendingChanges] = useState<Map<string, { newName?: string; caste?: string; ethnicity?: string }>>(new Map());
 
   const selectedMun = municipalities.find(m => m.id === selectedMunId);
@@ -183,14 +185,27 @@ const Segments: React.FC = () => {
   }, [surnameData, getSurnameMapping, pendingChanges]);
 
   const filteredSurnameCards = useMemo(() => {
-    if (!surnameSearch) return surnameWithMapping;
-    const q = surnameSearch.toLowerCase();
-    return surnameWithMapping.filter(s =>
-      s.name.toLowerCase().includes(q) ||
-      s.caste.toLowerCase().includes(q) ||
-      s.ethnicity.toLowerCase().includes(q)
-    );
-  }, [surnameWithMapping, surnameSearch]);
+    let result = surnameWithMapping;
+    
+    // 1. Filter
+    if (surnameSearch) {
+      const q = surnameSearch.toLowerCase();
+      result = result.filter(s =>
+        s.name.toLowerCase().includes(q) ||
+        s.caste.toLowerCase().includes(q) ||
+        s.ethnicity.toLowerCase().includes(q)
+      );
+    }
+
+    // 2. Sort
+    return result.sort((a, b) => {
+      if (sortMode === 'count') {
+        return b.value - a.value; // High to Low
+      } else {
+        return a.name.localeCompare(b.name, language === 'ne' ? 'ne' : 'en'); // Alphabetical
+      }
+    });
+  }, [surnameWithMapping, surnameSearch, sortMode, language]);
 
   const startSurnameEdit = (surname: string) => {
     setEditingSurname(surname);
@@ -651,19 +666,55 @@ const Segments: React.FC = () => {
               {/* Save & Search panel */}
               <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
                 className="bg-card rounded-xl border border-border p-5 flex flex-col gap-4">
-                <h3 className="font-bold text-sm flex items-center gap-2">
-                  <Edit2 className="w-4 h-4 text-primary" />
-                  {language === 'ne' ? 'थर व्यवस्थापन' : 'Surname Management'}
-                </h3>
-                <div className="relative">
-                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    placeholder={language === 'ne' ? 'थर खोज्नुहोस्...' : 'Search surname...'}
-                    value={surnameSearch}
-                    onChange={e => setSurnameSearch(e.target.value)}
-                    className="pl-9"
-                  />
+                <div className="flex items-center justify-between">
+                  <h3 className="font-bold text-sm flex items-center gap-2">
+                    <Edit2 className="w-4 h-4 text-primary" />
+                    {language === 'ne' ? 'थर व्यवस्थापन' : 'Surname Management'}
+                  </h3>
+                  
+                  {/* View Toggles */}
+                  <div className="flex items-center gap-1 bg-muted/50 p-1 rounded-lg">
+                    <button 
+                      onClick={() => setViewMode('grid')}
+                      className={`p-1.5 rounded-md transition-all ${viewMode === 'grid' ? 'bg-background shadow text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+                      title={language === 'ne' ? 'ग्रिड दृश्य' : 'Grid View'}
+                    >
+                      <LayoutGrid className="w-4 h-4" />
+                    </button>
+                    <button 
+                      onClick={() => setViewMode('list')}
+                      className={`p-1.5 rounded-md transition-all ${viewMode === 'list' ? 'bg-background shadow text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+                      title={language === 'ne' ? 'सूची दृश्य' : 'List View'}
+                    >
+                      <List className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
+
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      placeholder={language === 'ne' ? 'थर खोज्नुहोस्...' : 'Search surname...'}
+                      value={surnameSearch}
+                      onChange={e => setSurnameSearch(e.target.value)}
+                      className="pl-9 h-9 text-sm"
+                    />
+                  </div>
+                  
+                  {/* Sort Toggle */}
+                  <button 
+                    onClick={() => setSortMode(current => current === 'count' ? 'alpha' : 'count')}
+                    className="flex items-center gap-1.5 px-3 border border-border rounded-lg text-xs font-medium hover:bg-muted transition-colors whitespace-nowrap"
+                    title={language === 'ne' ? 'क्रमबद्ध गर्नुहोस्' : 'Sort'}
+                  >
+                    {sortMode === 'count' ? <ArrowUpNarrowWide className="w-4 h-4" /> : <ArrowDownAZ className="w-4 h-4" />}
+                    {sortMode === 'count' 
+                      ? (language === 'ne' ? 'संख्या' : 'Count') 
+                      : (language === 'ne' ? 'वर्णमाला' : 'A-Z')}
+                  </button>
+                </div>
+
                 <div className="text-sm text-muted-foreground space-y-1">
                   <p>{language === 'ne' ? 'कुल थर प्रकार' : 'Total surname types'}: <strong>{surnameData.length}</strong></p>
                   <p>{language === 'ne' ? 'म्यापिङ भएको' : 'Mapped'}: <strong>{surnameWithMapping.filter(s => s.caste).length}</strong></p>
@@ -684,97 +735,169 @@ const Segments: React.FC = () => {
               </motion.div>
             </div>
 
-            {/* Surname Cards Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-              <AnimatePresence>
-                {filteredSurnameCards.map((s, i) => (
-                  <motion.div
-                    key={s.name}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{ delay: i * 0.02 }}
-                    className={`bg-card rounded-xl border p-4 hover:shadow-md transition-all group ${
-                      s.hasPending ? 'border-primary/50 ring-1 ring-primary/20' : 'border-border'
-                    }`}
-                  >
-                    {/* Surname header */}
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
-                          {editingSurname === s.name ? (
-                            <div className="flex items-center gap-1 flex-1">
-                              <Input
-                                value={surnameEdit}
-                                onChange={e => setSurnameEdit(e.target.value)}
-                                className="h-7 text-sm"
-                                autoFocus
-                                onKeyDown={e => e.key === 'Enter' && saveSurnameEdit()}
-                              />
-                              <button onClick={saveSurnameEdit} className="text-primary hover:text-primary/80"><Check className="w-4 h-4" /></button>
-                              <button onClick={() => setEditingSurname(null)} className="text-muted-foreground hover:text-foreground"><X className="w-4 h-4" /></button>
-                            </div>
-                          ) : (
-                            <span className="font-bold text-sm">
-                              {s.pendingName ? (
-                                <span>
-                                  <span className="line-through text-muted-foreground">{s.name}</span>
-                                  {' → '}
-                                  <span className="text-primary">{s.pendingName}</span>
-                                </span>
-                              ) : s.name}
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1 ml-5">
-                          {s.value} {language === 'ne' ? 'मतदाता' : 'voters'} ({filteredVoters.length ? ((s.value / filteredVoters.length) * 100).toFixed(1) : 0}%)
-                        </p>
-                      </div>
-                      {editingSurname !== s.name && (
-                        <button
-                          onClick={() => startSurnameEdit(s.name)}
-                          className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-primary transition-all p-1"
-                          title={language === 'ne' ? 'थर सम्पादन' : 'Edit surname'}
-                        >
-                          <Edit2 className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                    </div>
-
-                    {/* Caste & Ethnicity badges */}
-                    <div className="flex flex-wrap gap-1.5 mb-2">
-                      {s.ethnicity ? (
-                        <Badge variant="secondary" className="text-xs font-normal">
-                          {language === 'ne' ? 'जाति' : 'Eth'}: {s.ethnicity}
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline" className="text-xs font-normal text-muted-foreground border-dashed">
-                          {language === 'ne' ? 'जाति: N/A' : 'Eth: N/A'}
-                        </Badge>
-                      )}
-                      {s.caste ? (
-                        <Badge variant="secondary" className="text-xs font-normal">
-                          {language === 'ne' ? 'जात' : 'Caste'}: {s.caste}
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline" className="text-xs font-normal text-muted-foreground border-dashed">
-                          {language === 'ne' ? 'जात: N/A' : 'Caste: N/A'}
-                        </Badge>
-                      )}
-                    </div>
-
-                    {/* Change category button */}
-                    <button
-                      onClick={() => startCategoryEdit(s.name)}
-                      className="w-full text-xs text-center py-1.5 rounded-lg border border-dashed border-border hover:border-primary/50 hover:bg-primary/5 text-muted-foreground hover:text-primary transition-all"
+            {/* Surname Cards Grid or List */}
+            {viewMode === 'grid' ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                <AnimatePresence mode='popLayout'>
+                  {filteredSurnameCards.map((s, i) => (
+                    <motion.div
+                      layout
+                      key={s.name}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.9 }}
+                      transition={{ duration: 0.2 }}
+                      className={`bg-card rounded-xl border p-4 hover:shadow-md transition-all group ${
+                        s.hasPending ? 'border-primary/50 ring-1 ring-primary/20' : 'border-border'
+                      }`}
                     >
-                      {language === 'ne' ? 'वर्ग परिवर्तन गर्नुहोस्' : 'Change Category'}
-                    </button>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-            </div>
+                      {/* Surname header */}
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
+                            {editingSurname === s.name ? (
+                              <div className="flex items-center gap-1 flex-1">
+                                <Input
+                                  value={surnameEdit}
+                                  onChange={e => setSurnameEdit(e.target.value)}
+                                  className="h-7 text-sm"
+                                  autoFocus
+                                  onKeyDown={e => e.key === 'Enter' && saveSurnameEdit()}
+                                />
+                                <button onClick={saveSurnameEdit} className="text-primary hover:text-primary/80"><Check className="w-4 h-4" /></button>
+                                <button onClick={() => setEditingSurname(null)} className="text-muted-foreground hover:text-foreground"><X className="w-4 h-4" /></button>
+                              </div>
+                            ) : (
+                              <span className="font-bold text-sm">
+                                {s.pendingName ? (
+                                  <span>
+                                    <span className="line-through text-muted-foreground">{s.name}</span>
+                                    {' → '}
+                                    <span className="text-primary">{s.pendingName}</span>
+                                  </span>
+                                ) : s.name}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1 ml-5">
+                            {s.value} {language === 'ne' ? 'मतदाता' : 'voters'} ({filteredVoters.length ? ((s.value / filteredVoters.length) * 100).toFixed(1) : 0}%)
+                          </p>
+                        </div>
+                        {editingSurname !== s.name && (
+                          <button
+                            onClick={() => startSurnameEdit(s.name)}
+                            className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-primary transition-all p-1"
+                            title={language === 'ne' ? 'थर सम्पादन' : 'Edit surname'}
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Caste & Ethnicity badges */}
+                      <div className="flex flex-wrap gap-1.5 mb-2">
+                        {s.ethnicity ? (
+                          <Badge variant="secondary" className="text-xs font-normal">
+                            {language === 'ne' ? 'जाति' : 'Eth'}: {s.ethnicity}
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-xs font-normal text-muted-foreground border-dashed">
+                            {language === 'ne' ? 'जाति: N/A' : 'Eth: N/A'}
+                          </Badge>
+                        )}
+                        {s.caste ? (
+                          <Badge variant="secondary" className="text-xs font-normal">
+                            {language === 'ne' ? 'जात' : 'Caste'}: {s.caste}
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-xs font-normal text-muted-foreground border-dashed">
+                            {language === 'ne' ? 'जात: N/A' : 'Caste: N/A'}
+                          </Badge>
+                        )}
+                      </div>
+
+                      {/* Change category button */}
+                      <button
+                        onClick={() => startCategoryEdit(s.name)}
+                        className="w-full text-xs text-center py-1.5 rounded-lg border border-dashed border-border hover:border-primary/50 hover:bg-primary/5 text-muted-foreground hover:text-primary transition-all"
+                      >
+                        {language === 'ne' ? 'वर्ग परिवर्तन गर्नुहोस्' : 'Change Category'}
+                      </button>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </div>
+            ) : (
+              <div className="bg-card rounded-xl border border-border overflow-hidden">
+                <div className="max-h-[600px] overflow-y-auto">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted/50 sticky top-0 z-10">
+                      <tr>
+                        <th className="text-left px-4 py-3 font-medium text-muted-foreground">{language === 'ne' ? 'थर' : 'Surname'}</th>
+                        <th className="text-right px-4 py-3 font-medium text-muted-foreground w-24">{language === 'ne' ? 'संख्या' : 'Count'}</th>
+                        <th className="text-left px-4 py-3 font-medium text-muted-foreground">{language === 'ne' ? 'जाति' : 'Ethnicity'}</th>
+                        <th className="text-left px-4 py-3 font-medium text-muted-foreground">{language === 'ne' ? 'जात' : 'Caste'}</th>
+                        <th className="text-right px-4 py-3 font-medium text-muted-foreground w-24">{t('actions')}</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border/50">
+                      {filteredSurnameCards.map((s, i) => (
+                        <tr key={s.name} className="hover:bg-muted/30 transition-colors group">
+                          <td className="px-4 py-3">
+                             <div className="flex items-center gap-2">
+                               <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
+                               {editingSurname === s.name ? (
+                                  <div className="flex items-center gap-1">
+                                    <Input
+                                      value={surnameEdit}
+                                      onChange={e => setSurnameEdit(e.target.value)}
+                                      className="h-7 text-sm w-32"
+                                      autoFocus
+                                      onKeyDown={e => e.key === 'Enter' && saveSurnameEdit()}
+                                    />
+                                    <button onClick={saveSurnameEdit} className="text-primary hover:text-primary/80"><Check className="w-3.5 h-3.5" /></button>
+                                    <button onClick={() => setEditingSurname(null)} className="text-muted-foreground hover:text-foreground"><X className="w-3.5 h-3.5" /></button>
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-medium">
+                                      {s.pendingName ? (
+                                        <span>
+                                          <span className="line-through text-muted-foreground">{s.name}</span>
+                                          {' → '}
+                                          <span className="text-primary">{s.pendingName}</span>
+                                        </span>
+                                      ) : s.name}
+                                    </span>
+                                    {editingSurname !== s.name && (
+                                      <button onClick={() => startSurnameEdit(s.name)} className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-primary transition-all">
+                                        <Edit2 className="w-3 h-3" />
+                                      </button>
+                                    )}
+                                  </div>
+                                )}
+                             </div>
+                          </td>
+                          <td className="px-4 py-3 text-right font-medium">{s.value}</td>
+                          <td className="px-4 py-3">
+                            {s.ethnicity ? <Badge variant="secondary" className="text-xs font-normal">{s.ethnicity}</Badge> : <span className="text-muted-foreground text-xs">-</span>}
+                          </td>
+                          <td className="px-4 py-3">
+                            {s.caste ? <Badge variant="outline" className="text-xs font-normal">{s.caste}</Badge> : <span className="text-muted-foreground text-xs">-</span>}
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                             <button onClick={() => startCategoryEdit(s.name)} className="text-xs text-primary hover:underline">
+                               {language === 'ne' ? 'सम्पादन' : 'Edit'}
+                             </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
 
             {filteredSurnameCards.length === 0 && (
               <div className="text-center py-12 text-muted-foreground">
