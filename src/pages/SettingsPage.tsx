@@ -117,12 +117,37 @@ const SettingsPage: React.FC = () => {
     setEditChoiceLogo('');
   };
 
-  const handleRemoveChoiceInEdit = (choice: string) => {
-    if (!editingColumn) return;
-    const updatedChoices = (editingColumn.choices || []).filter(c => c !== choice);
-    const updatedLogos = { ...(editingColumn.choiceLogos || {}) };
-    delete updatedLogos[choice];
-    setEditingColumn({ ...editingColumn, choices: updatedChoices, choiceLogos: updatedLogos });
+  // Move choice up/down
+  const handleMoveChoice = (index: number, direction: 'up' | 'down') => {
+    if (!editingColumn || !editingColumn.choices) return;
+    const choices = [...editingColumn.choices];
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+
+    if (targetIndex < 0 || targetIndex >= choices.length) return;
+
+    // Swap
+    [choices[index], choices[targetIndex]] = [choices[targetIndex], choices[index]];
+    setEditingColumn({ ...editingColumn, choices });
+  };
+
+  // Edit choice text inline
+  const handleUpdateChoice = (oldChoice: string, newChoice: string) => {
+    if (!editingColumn || !editingColumn.choices || !newChoice.trim()) return;
+    if (editingColumn.choices.includes(newChoice) && newChoice !== oldChoice) {
+      alert(language === 'ne' ? 'यो विकल्प पहिले नै छ' : 'Choice already exists');
+      return;
+    }
+
+    const choices = editingColumn.choices.map(c => c === oldChoice ? newChoice : c);
+    
+    // Update logo key if exists
+    let logos = editingColumn.choiceLogos;
+    if (logos && logos[oldChoice]) {
+      logos = { ...logos, [newChoice]: logos[oldChoice] };
+      delete logos[oldChoice];
+    }
+
+    setEditingColumn({ ...editingColumn, choices, choiceLogos: logos });
   };
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>, target: 'new' | 'edit') => {
@@ -865,8 +890,18 @@ const SettingsPage: React.FC = () => {
                     {(editingColumn.choices || []).length === 0 && (
                       <p className="text-xs text-muted-foreground py-2">{language === 'ne' ? 'कुनै विकल्प छैन' : 'No options configured'}</p>
                     )}
-                    {(editingColumn.choices || []).map(choice => (
+                    {(editingColumn.choices || []).map((choice, idx) => (
                       <div key={choice} className="flex items-center gap-2 px-2.5 py-1.5 rounded-md bg-muted/50 group">
+                        {/* Reorder Arrows */}
+                        <div className="flex flex-col gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                           <button onClick={() => handleMoveChoice(idx, 'up')} disabled={idx === 0} className="text-muted-foreground hover:text-foreground disabled:opacity-20">
+                             <ArrowUp className="w-3 h-3" />
+                           </button>
+                           <button onClick={() => handleMoveChoice(idx, 'down')} disabled={idx === (editingColumn.choices?.length || 0) - 1} className="text-muted-foreground hover:text-foreground disabled:opacity-20">
+                             <ArrowDown className="w-3 h-3" />
+                           </button>
+                        </div>
+
                         {/* Logo thumbnail */}
                         {editingColumn.type === 'single-choice-logo' && (
                           <label className="flex-shrink-0 cursor-pointer" title={language === 'ne' ? 'लोगो बदल्नुहोस्' : 'Change logo'}>
@@ -880,7 +915,14 @@ const SettingsPage: React.FC = () => {
                             <input type="file" accept="image/*" onChange={e => handleChoiceLogoReplace(e, choice)} className="hidden" />
                           </label>
                         )}
-                        <span className="flex-1 text-sm truncate">{choice}</span>
+                        
+                        {/* Editable Text */}
+                        <input 
+                          className="flex-1 text-sm bg-transparent border-none focus:ring-0 focus:outline-none hover:bg-background/50 rounded px-1"
+                          value={choice}
+                          onChange={(e) => handleUpdateChoice(choice, e.target.value)}
+                        />
+
                         <button onClick={() => handleRemoveChoiceInEdit(choice)}
                           className="p-1 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-all">
                           <X className="w-3.5 h-3.5" />
