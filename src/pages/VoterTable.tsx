@@ -11,7 +11,6 @@ import {
 } from 'lucide-react';
 import { readExcelFile, writeExcelFile } from '@/lib/excel';
 import { matchExcelHeaders, parseVoterRow } from '@/lib/excelHeaderMatch';
-import { transliterateToEnglish } from '@/lib/transliteration';
 
 const VoterTable: React.FC = () => {
   const { t, language } = useLanguage();
@@ -31,7 +30,6 @@ const VoterTable: React.FC = () => {
   const tableRef = useRef<HTMLDivElement>(null);
   const [autoWidth, setAutoWidth] = useState(true);
   const [textAlign, setTextAlign] = useState<'left' | 'center' | 'right'>('left');
-  const [tableLanguage, setTableLanguage] = useState<'ne' | 'en'>(language);
 
   const selectedMun = municipalities.find(m => m.id === selectedMunId);
   const selectedWard = selectedMun?.wards.find(w => w.id === selectedWardId);
@@ -54,18 +52,13 @@ const VoterTable: React.FC = () => {
   }, [selectedWard, selectedBoothId]);
 
   // Helper function to transliterate/translate content
-  const translateContent = (content: string | number, lang: 'ne' | 'en') => {
+  const translateContent = (content: string | number) => {
     if (content === null || content === undefined) return '';
     const str = String(content);
     
-    // If target is Nepali, use basic number conversion (extend this for text if needed)
-    if (lang === 'ne') {
+    // If target is Nepali, use basic number conversion
+    if (language === 'ne') {
       return str.replace(/[0-9]/g, d => '०१२३४५६७८९'[parseInt(d)]);
-    }
-    
-    // If target is English, use improved transliteration
-    if (lang === 'en') {
-      return transliterateToEnglish(str);
     }
     
     return str;
@@ -111,10 +104,6 @@ const VoterTable: React.FC = () => {
       if (current === 'center') return 'right';
       return 'left';
     });
-  };
-
-  const toggleTableLanguage = () => {
-    setTableLanguage(current => current === 'ne' ? 'en' : 'ne');
   };
 
   const handleExport = async () => {
@@ -555,10 +544,6 @@ const VoterTable: React.FC = () => {
           <Download className="w-4 h-4" />
           {t('export')}
         </button>
-        <button onClick={toggleTableLanguage} className="flex items-center gap-1.5 px-3 py-2 border border-border rounded-lg text-sm hover:bg-muted transition-colors">
-          <Globe className="w-4 h-4" />
-          {tableLanguage === 'ne' ? 'English' : 'नेपाली'}
-        </button>
       </motion.div>
 
       {/* Column Picker Dropdown */}
@@ -662,7 +647,7 @@ const VoterTable: React.FC = () => {
                       textAlign === 'center' ? 'text-center' : textAlign === 'right' ? 'text-right' : 'text-left'
                     }`}
                   >
-                    {tableLanguage === 'ne' ? col.labelNe : col.labelEn}
+                    {language === 'ne' ? col.labelNe : col.labelEn}
                   </th>
                 ))}
                 <th className="px-3 py-3 text-left font-bold text-xs text-primary w-24">{t('actions')}</th>
@@ -677,7 +662,7 @@ const VoterTable: React.FC = () => {
                   return (
                     <tr key={voter.id} className="border-b border-border/40 hover:bg-muted/40 transition-colors even:bg-muted/10">
                       <td className="px-3 py-2.5 text-muted-foreground text-xs w-12">
-                        {translateContent(globalIdx + 1, tableLanguage)}
+                        {translateContent(globalIdx + 1)}
                       </td>
                       {visibleCols.map(col => (
                         <td
@@ -689,9 +674,9 @@ const VoterTable: React.FC = () => {
                           }`}
                         >
                           {col.key === 'mobileNumber' && voter[col.key] ? (
-                            <span>{tableLanguage === 'ne' ? '🇳🇵' : '🇳🇵'} {translateContent(voter[col.key] || '', tableLanguage)}</span>
+                            <span>{language === 'ne' ? '🇳🇵' : '🇳🇵'} {translateContent(voter[col.key] || '')}</span>
                           ) : (
-                            translateContent(voter[col.key] ?? '', tableLanguage)
+                            translateContent(voter[col.key] ?? '')
                           )}
                         </td>
                       ))}
