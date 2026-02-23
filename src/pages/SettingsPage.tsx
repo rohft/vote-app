@@ -816,17 +816,20 @@ const SettingsPage: React.FC = () => {
           </DialogHeader>
           {editingColumn && (
             <div className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <Label className="text-xs">{t('columnName')} (नेपाली)</Label>
-                  <Input value={editingColumn.labelNe} onChange={e => setEditingColumn({ ...editingColumn, labelNe: e.target.value })}
-                    className="mt-1" disabled={!editingColumn.isCustom} />
-                </div>
-                <div>
-                  <Label className="text-xs">{t('columnNameEn')}</Label>
-                  <Input value={editingColumn.labelEn} onChange={e => setEditingColumn({ ...editingColumn, labelEn: e.target.value })}
-                    className="mt-1" disabled={!editingColumn.isCustom} />
-                </div>
+              <div>
+                <Label className="text-xs">{t('columnName')}</Label>
+                <Input
+                  value={language === 'ne' ? editingColumn.labelNe : editingColumn.labelEn}
+                  onChange={e => {
+                    if (language === 'ne') {
+                      setEditingColumn({ ...editingColumn, labelNe: e.target.value });
+                    } else {
+                      setEditingColumn({ ...editingColumn, labelEn: e.target.value });
+                    }
+                  }}
+                  className="mt-1"
+                  disabled={!editingColumn.isCustom}
+                />
               </div>
 
               <div>
